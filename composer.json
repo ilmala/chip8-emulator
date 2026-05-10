@@ -1,0 +1,32 @@
+{
+    "name": "ilmala/chip8-emulator",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Chip8\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": ">=8.4"
+    },
+    "require-dev": {
+        "pestphp/pest": "*",
+        "phpstan/phpstan": "*",
+        "phpstan/extension-installer": "*"
+    },
+    "scripts": {
+        "test": "pest",
+        "analyse": "phpstan analyse"
+    },
+    "config": {
+        "allow-plugins": {
+            "phpstan/extension-installer": true,
+            "pestphp/pest-plugin": true
+        }
+    }
+}
