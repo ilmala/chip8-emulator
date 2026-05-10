@@ -121,7 +121,10 @@ final class Cpu
     // ── 0x1 ──────────────────────────────────────────────────────────────────
 
     /** JP addr — Jump to address NNN. */
-    private function op1NNN(Opcode $op): void {}
+    private function op1NNN(Opcode $op): void
+    {
+        $this->registers->setPc($op->nnn);
+    }
 
     // ── 0x2 ──────────────────────────────────────────────────────────────────
 
@@ -146,7 +149,10 @@ final class Cpu
     // ── 0x6 ──────────────────────────────────────────────────────────────────
 
     /** LD Vx, byte — Set Vx = KK. */
-    private function op6XKK(Opcode $op): void {}
+    private function op6XKK(Opcode $op): void
+    {
+        $this->registers->setV($op->x, $op->kk);
+    }
 
     // ── 0x7 ──────────────────────────────────────────────────────────────────
 
@@ -190,7 +196,10 @@ final class Cpu
     // ── 0xA ──────────────────────────────────────────────────────────────────
 
     /** LD I, addr — Set I = NNN. */
-    private function opANNN(Opcode $op): void {}
+    private function opANNN(Opcode $op): void
+    {
+        $this->registers->setI($op->nnn);
+    }
 
     // ── 0xB ──────────────────────────────────────────────────────────────────
 
@@ -208,7 +217,20 @@ final class Cpu
      * DRW Vx, Vy, nibble — Draw N-byte sprite at (Vx, Vy); VF = collision.
      * Reads N bytes from memory starting at address I.
      */
-    private function opDXYN(Opcode $op): void {}
+    private function opDXYN(Opcode $op): void
+    {
+        $x = $this->registers->getV($op->x);
+        $y = $this->registers->getV($op->y);
+        $base = $this->registers->getI();
+        $spriteBytes = [];
+
+        for ($row = 0; $row < $op->n; $row++) {
+            $spriteBytes[] = $this->memory->read(($base + $row) & 0xFFFF);
+        }
+
+        $collision = $this->display->drawSprite($x, $y, $spriteBytes);
+        $this->registers->setV(0xF, $collision ? 1 : 0);
+    }
 
     // ── 0xE ──────────────────────────────────────────────────────────────────
 
