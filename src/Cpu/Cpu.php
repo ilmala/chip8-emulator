@@ -129,22 +129,41 @@ final class Cpu
     // ── 0x2 ──────────────────────────────────────────────────────────────────
 
     /** CALL addr — Push current PC onto stack, then jump to NNN. */
-    private function op2NNN(Opcode $op): void {}
+    private function op2NNN(Opcode $op): void
+    {
+        $this->stack->push($this->registers->getPc());
+        $this->registers->setPc($op->nnn);
+    }
 
     // ── 0x3 ──────────────────────────────────────────────────────────────────
 
     /** SE Vx, byte — Skip next instruction if Vx == KK. */
-    private function op3XKK(Opcode $op): void {}
+    private function op3XKK(Opcode $op): void
+    {
+        if ($this->registers->getV($op->x) === $op->kk) {
+            $this->registers->incrementPc();
+        }
+    }
 
     // ── 0x4 ──────────────────────────────────────────────────────────────────
 
     /** SNE Vx, byte — Skip next instruction if Vx != KK. */
-    private function op4XKK(Opcode $op): void {}
+    private function op4XKK(Opcode $op): void
+    {
+        if ($this->registers->getV($op->x) !== $op->kk) {
+            $this->registers->incrementPc();
+        }
+    }
 
     // ── 0x5 ──────────────────────────────────────────────────────────────────
 
     /** SE Vx, Vy — Skip next instruction if Vx == Vy. */
-    private function op5XY0(Opcode $op): void {}
+    private function op5XY0(Opcode $op): void
+    {
+        if ($this->registers->getV($op->x) === $this->registers->getV($op->y)) {
+            $this->registers->incrementPc();
+        }
+    }
 
     // ── 0x6 ──────────────────────────────────────────────────────────────────
 
@@ -157,41 +176,91 @@ final class Cpu
     // ── 0x7 ──────────────────────────────────────────────────────────────────
 
     /** ADD Vx, byte — Set Vx = Vx + KK (no carry flag). */
-    private function op7XKK(Opcode $op): void {}
+    private function op7XKK(Opcode $op): void
+    {
+        $this->registers->setV($op->x, ($this->registers->getV($op->x) + $op->kk) & 0xFF);
+    }
 
     // ── 0x8 (ALU) ────────────────────────────────────────────────────────────
 
     /** LD Vx, Vy — Set Vx = Vy. */
-    private function op8XY0(Opcode $op): void {}
+    private function op8XY0(Opcode $op): void
+    {
+        $this->registers->setV($op->x, $this->registers->getV($op->y));
+    }
 
-    /** OR Vx, Vy — Set Vx = Vx OR Vy. */
-    private function op8XY1(Opcode $op): void {}
+    /** OR Vx, Vy — Set Vx = Vx OR Vy; VF reset (original CHIP-8 quirk). */
+    private function op8XY1(Opcode $op): void
+    {
+        $this->registers->setV($op->x, ($this->registers->getV($op->x) | $this->registers->getV($op->y)) & 0xFF);
+        $this->registers->setV(0xF, 0);
+    }
 
-    /** AND Vx, Vy — Set Vx = Vx AND Vy. */
-    private function op8XY2(Opcode $op): void {}
+    /** AND Vx, Vy — Set Vx = Vx AND Vy; VF reset (original CHIP-8 quirk). */
+    private function op8XY2(Opcode $op): void
+    {
+        $this->registers->setV($op->x, ($this->registers->getV($op->x) & $this->registers->getV($op->y)) & 0xFF);
+        $this->registers->setV(0xF, 0);
+    }
 
-    /** XOR Vx, Vy — Set Vx = Vx XOR Vy. */
-    private function op8XY3(Opcode $op): void {}
+    /** XOR Vx, Vy — Set Vx = Vx XOR Vy; VF reset (original CHIP-8 quirk). */
+    private function op8XY3(Opcode $op): void
+    {
+        $this->registers->setV($op->x, ($this->registers->getV($op->x) ^ $this->registers->getV($op->y)) & 0xFF);
+        $this->registers->setV(0xF, 0);
+    }
 
     /** ADD Vx, Vy — Set Vx = Vx + Vy; VF = carry. */
-    private function op8XY4(Opcode $op): void {}
+    private function op8XY4(Opcode $op): void
+    {
+        $sum = $this->registers->getV($op->x) + $this->registers->getV($op->y);
+        $this->registers->setV($op->x, $sum & 0xFF);
+        $this->registers->setV(0xF, $sum > 0xFF ? 1 : 0);
+    }
 
-    /** SUB Vx, Vy — Set Vx = Vx - Vy; VF = NOT borrow. */
-    private function op8XY5(Opcode $op): void {}
+    /** SUB Vx, Vy — Set Vx = Vx - Vy; VF = NOT borrow (1 if Vx >= Vy). */
+    private function op8XY5(Opcode $op): void
+    {
+        $vx = $this->registers->getV($op->x);
+        $vy = $this->registers->getV($op->y);
+        $this->registers->setV($op->x, ($vx - $vy) & 0xFF);
+        $this->registers->setV(0xF, $vx >= $vy ? 1 : 0);
+    }
 
-    /** SHR Vx — Set Vx = Vx >> 1; VF = shifted-out LSB. */
-    private function op8XY6(Opcode $op): void {}
+    /** SHR Vx, Vy — Set Vx = Vy >> 1; VF = shifted-out LSB (original CHIP-8: source is Vy). */
+    private function op8XY6(Opcode $op): void
+    {
+        $vy = $this->registers->getV($op->y);
+        $this->registers->setV($op->x, $vy >> 1);
+        $this->registers->setV(0xF, $vy & 0x1);
+    }
 
-    /** SUBN Vx, Vy — Set Vx = Vy - Vx; VF = NOT borrow. */
-    private function op8XY7(Opcode $op): void {}
+    /** SUBN Vx, Vy — Set Vx = Vy - Vx; VF = NOT borrow (1 if Vy >= Vx). */
+    private function op8XY7(Opcode $op): void
+    {
+        $vx = $this->registers->getV($op->x);
+        $vy = $this->registers->getV($op->y);
+        $this->registers->setV($op->x, ($vy - $vx) & 0xFF);
+        $this->registers->setV(0xF, $vy >= $vx ? 1 : 0);
+    }
 
-    /** SHL Vx — Set Vx = Vx << 1; VF = shifted-out MSB. */
-    private function op8XYE(Opcode $op): void {}
+    /** SHL Vx, Vy — Set Vx = Vy << 1; VF = shifted-out MSB (original CHIP-8: source is Vy). */
+    private function op8XYE(Opcode $op): void
+    {
+        $vy = $this->registers->getV($op->y);
+        $this->registers->setV($op->x, ($vy << 1) & 0xFF);
+        $this->registers->setV(0xF, ($vy >> 7) & 0x1);
+    }
 
     // ── 0x9 ──────────────────────────────────────────────────────────────────
 
     /** SNE Vx, Vy — Skip next instruction if Vx != Vy. */
-    private function op9XY0(Opcode $op): void {}
+    private function op9XY0(Opcode $op): void
+    {
+        if ($this->registers->getV($op->x) !== $this->registers->getV($op->y)) {
+            $this->registers->incrementPc();
+        }
+    }
 
     // ── 0xA ──────────────────────────────────────────────────────────────────
 
@@ -274,17 +343,39 @@ final class Cpu
     }
 
     /** ADD I, Vx — Set I = I + Vx. */
-    private function opFX1E(Opcode $op): void {}
+    private function opFX1E(Opcode $op): void
+    {
+        $this->registers->setI(($this->registers->getI() + $this->registers->getV($op->x)) & 0xFFFF);
+    }
 
     /** LD F, Vx — Set I = address of built-in font sprite for digit Vx. */
     private function opFX29(Opcode $op): void {}
 
     /** LD B, Vx — Store BCD of Vx in memory at I, I+1, I+2. */
-    private function opFX33(Opcode $op): void {}
+    private function opFX33(Opcode $op): void
+    {
+        $vx = $this->registers->getV($op->x);
+        $i = $this->registers->getI();
+        $this->memory->write($i & 0xFFFF, intdiv($vx, 100) & 0xFF);
+        $this->memory->write(($i + 1) & 0xFFFF, intdiv($vx % 100, 10) & 0xFF);
+        $this->memory->write(($i + 2) & 0xFFFF, ($vx % 10) & 0xFF);
+    }
 
     /** LD [I], Vx — Store V0 through Vx in memory starting at address I. */
-    private function opFX55(Opcode $op): void {}
+    private function opFX55(Opcode $op): void
+    {
+        $base = $this->registers->getI();
+        for ($r = 0; $r <= $op->x; $r++) {
+            $this->memory->write(($base + $r) & 0xFFFF, $this->registers->getV($r));
+        }
+    }
 
     /** LD Vx, [I] — Read V0 through Vx from memory starting at address I. */
-    private function opFX65(Opcode $op): void {}
+    private function opFX65(Opcode $op): void
+    {
+        $base = $this->registers->getI();
+        for ($r = 0; $r <= $op->x; $r++) {
+            $this->registers->setV($r, $this->memory->read(($base + $r) & 0xFFFF));
+        }
+    }
 }
