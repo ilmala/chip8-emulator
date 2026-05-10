@@ -13,15 +13,17 @@ A technically accurate CHIP-8 emulator written in PHP 8.5 (CLI mode). The system
 composer install
 ```
 
-**Run tests (Pest PHP — add to require-dev when setting up):**
+**Workflow obbligatorio per ogni file modificato (in questo ordine):**
 ```bash
-./vendor/bin/pest
-./vendor/bin/pest --filter=SomeName   # single test
+./vendor/bin/pint src/                # 1. formatta
+./vendor/bin/phpstan analyse          # 2. analisi statica
+./vendor/bin/pest                     # 3. test
 ```
 
-**Static analysis (PHPStan Level 9 — add to require-dev when setting up):**
+**Singolo file o test:**
 ```bash
-./vendor/bin/phpstan analyse
+./vendor/bin/pint src/Memory/Memory.php
+./vendor/bin/pest tests/Memory/MemoryTest.php
 ```
 
 ## Architecture

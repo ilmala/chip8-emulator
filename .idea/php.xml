@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="LaravelPint">
+    <laravel_pint_settings>
+      <LaravelPintConfiguration tool_path="$PROJECT_DIR$/vendor/bin/pint" />
+      <laravel_pint_by_interpreter asDefaultInterpreter="true" interpreter_id="4251283c-2164-4388-8b75-ead5561ce218" tool_path="$PROJECT_DIR$/vendor/bin/pint">
+        <option name="timeout" value="30000" />
+      </laravel_pint_by_interpreter>
+    </laravel_pint_settings>
+  </component>
+  <component name="LaravelPintOptionsConfiguration">
+    <option name="pintJsonPath" value="$PROJECT_DIR$/pint.json" />
+    <option name="ruleset" value="defined in pint.json" />
+  </component>
   <component name="MessDetectorOptionsConfiguration">
     <option name="transferred" value="true" />
   </component>
@@ -9,6 +21,14 @@
   <component name="PHPCodeSnifferOptionsConfiguration">
     <option name="highlightLevel" value="WARNING" />
     <option name="transferred" value="true" />
+  </component>
+  <component name="PhpCodeSniffer">
+    <phpcs_settings>
+      <phpcs_by_interpreter asDefaultInterpreter="true" interpreter_id="4251283c-2164-4388-8b75-ead5561ce218" timeout="30000" />
+    </phpcs_settings>
+  </component>
+  <component name="PhpExternalFormatter">
+    <option name="externalFormatter" value="LARAVEL_PINT" />
   </component>
   <component name="PhpIncludePathManager">
     <include_path>
@@ -71,12 +91,16 @@
       <path value="$PROJECT_DIR$/vendor/symfony/process" />
       <path value="$PROJECT_DIR$/vendor/symfony/polyfill-intl-grapheme" />
       <path value="$PROJECT_DIR$/vendor/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/vendor/laravel/agent-detector" />
+      <path value="$PROJECT_DIR$/vendor/laravel/pao" />
+      <path value="$PROJECT_DIR$/vendor/laravel/pint" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.4" />
   <component name="PhpStan">
     <PhpStan_settings>
       <PhpStanConfiguration tool_path="$PROJECT_DIR$/vendor/bin/phpstan" />
+      <phpstan_by_interpreter asDefaultInterpreter="true" interpreter_id="4251283c-2164-4388-8b75-ead5561ce218" tool_path="$PROJECT_DIR$/vendor/bin/phpstan" timeout="60000" />
     </PhpStan_settings>
   </component>
   <component name="PhpStanOptionsConfiguration">
@@ -87,6 +111,11 @@
     <phpunit_settings>
       <PhpUnitSettings configuration_file_path="$PROJECT_DIR$/phpunit.xml" custom_loader_path="$PROJECT_DIR$/vendor/autoload.php" paratest_path="$PROJECT_DIR$/vendor/bin/paratest_for_phpstorm" use_configuration_file="true" />
     </phpunit_settings>
+  </component>
+  <component name="Psalm">
+    <Psalm_settings>
+      <psalm_fixer_by_interpreter asDefaultInterpreter="true" interpreter_id="4251283c-2164-4388-8b75-ead5561ce218" timeout="60000" />
+    </Psalm_settings>
   </component>
   <component name="PsalmOptionsConfiguration">
     <option name="transferred" value="true" />
