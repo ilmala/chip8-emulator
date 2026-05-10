@@ -25,6 +25,7 @@ final class Emulator
     // Number of CPU cycles between each timer tick and display refresh.
     private const int CYCLES_PER_TICK = self::CYCLES_PER_SECOND / self::TIMER_HZ;
 
+
     private readonly Memory $memory;
 
     private readonly Registers $registers;
@@ -84,6 +85,7 @@ final class Emulator
      */
     public function run(): void
     {
+        $this->setupTerminal();
         $this->renderer->clearScreen();
 
         $cycleCount = 0;
@@ -94,6 +96,7 @@ final class Emulator
             $cycleCount++;
 
             if ($cycleCount >= self::CYCLES_PER_TICK) {
+                $this->readInput();
                 $this->delayTimer->tick();
                 $this->soundTimer->tick();
                 $this->renderer->render($this->display);
@@ -123,5 +126,57 @@ final class Emulator
     public function getRenderer(): TerminalRenderer
     {
         return $this->renderer;
+    }
+
+    /**
+     * Maps a physical key character to a CHIP-8 key index (0–15).
+     * Layout:  1 2 3 4  →  1 2 3 C
+     *          q w e r  →  4 5 6 D
+     *          a s d f  →  7 8 9 E
+     *          z x c v  →  A 0 B F
+     *
+     * @return int<0, 15>|null
+     */
+    private static function charToChip8Key(string $char): ?int
+    {
+        return match ($char) {
+            '1' => 0x1, '2' => 0x2, '3' => 0x3, '4' => 0xC,
+            'q' => 0x4, 'w' => 0x5, 'e' => 0x6, 'r' => 0xD,
+            'a' => 0x7, 's' => 0x8, 'd' => 0x9, 'f' => 0xE,
+            'z' => 0xA, 'x' => 0x0, 'c' => 0xB, 'v' => 0xF,
+            default => null,
+        };
+    }
+
+    private function setupTerminal(): void
+    {
+        system('stty -icanon -echo min 0 time 0');
+        stream_set_blocking(STDIN, false);
+        register_shutdown_function(static function (): void {
+            system('stty sane');
+        });
+    }
+
+    private function readInput(): void
+    {
+        $this->keyboard->releaseAll();
+
+        $char = fread(STDIN, 1);
+
+        if ($char === false || $char === '') {
+            return;
+        }
+
+        if ($char === "\033") {
+            $this->stop();
+
+            return;
+        }
+
+        $key = self::charToChip8Key($char);
+
+        if ($key !== null) {
+            $this->keyboard->press($key);
+        }
     }
 }

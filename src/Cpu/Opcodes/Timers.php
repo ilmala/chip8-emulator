@@ -15,7 +15,10 @@ trait Timers
     }
 
     /** LD DT, Vx — Set delay timer = Vx. */
-    private function opFX15(Opcode $op): void {}
+    private function opFX15(Opcode $op): void
+    {
+        $this->delayTimer->setValue($this->registers->getV($op->x));
+    }
 
     /** LD ST, Vx — Set sound timer = Vx. */
     private function opFX18(Opcode $op): void

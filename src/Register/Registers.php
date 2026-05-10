@@ -73,6 +73,11 @@ final class Registers
         $this->pc = ($this->pc + 2) & 0xFFFF;
     }
 
+    public function decrementPc(): void
+    {
+        $this->pc = ($this->pc - 2) & 0xFFFF;
+    }
+
     /**
      * @phpstan-assert int<0, 15> $index
      */

@@ -28,5 +28,16 @@ trait Input
      * LD Vx, K — Wait for key press, store key value in Vx.
      * Execution is halted until a key is pressed (re-executes this opcode by decrementing PC).
      */
-    private function opFX0A(Opcode $op): void {}
+    private function opFX0A(Opcode $op): void
+    {
+        $key = $this->keyboard->getFirstPressedKey();
+
+        if ($key === null) {
+            $this->registers->decrementPc();
+
+            return;
+        }
+
+        $this->registers->setV($op->x, $key);
+    }
 }

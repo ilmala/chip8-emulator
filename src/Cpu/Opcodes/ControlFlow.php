@@ -28,5 +28,8 @@ trait ControlFlow
     }
 
     /** JP V0, addr — Jump to address NNN + V0. */
-    private function opBNNN(Opcode $op): void {}
+    private function opBNNN(Opcode $op): void
+    {
+        $this->registers->setPc(($op->nnn + $this->registers->getV(0)) & 0xFFFF);
+    }
 }

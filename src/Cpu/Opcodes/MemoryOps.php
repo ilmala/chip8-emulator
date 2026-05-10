@@ -21,7 +21,10 @@ trait MemoryOps
     }
 
     /** LD F, Vx — Set I = address of built-in font sprite for digit Vx. */
-    private function opFX29(Opcode $op): void {}
+    private function opFX29(Opcode $op): void
+    {
+        $this->registers->setI($this->memory->fontAddress($this->registers->getV($op->x)));
+    }
 
     /** LD B, Vx — Store BCD of Vx in memory at I, I+1, I+2. */
     private function opFX33(Opcode $op): void

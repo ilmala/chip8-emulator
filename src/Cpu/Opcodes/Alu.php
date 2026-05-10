@@ -90,5 +90,8 @@ trait Alu
     }
 
     /** RND Vx, byte — Set Vx = random byte AND KK. */
-    private function opCXKK(Opcode $op): void {}
+    private function opCXKK(Opcode $op): void
+    {
+        $this->registers->setV($op->x, (random_int(0, 255) & $op->kk) & 0xFF);
+    }
 }

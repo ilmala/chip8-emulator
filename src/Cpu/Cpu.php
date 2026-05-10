@@ -61,7 +61,11 @@ final class Cpu
             0x0 => match ($op->kk) {
                 0xE0 => $this->op00E0(),
                 0xEE => $this->op00EE(),
-                default => throw new RuntimeException(sprintf('Unknown opcode: %s', $op)),
+                // SUPER-CHIP extensions: hires mode, scroll, exit — treat as no-ops
+                0xFB, 0xFC, 0xFD, 0xFE, 0xFF => null,
+                default => ($op->kk & 0xF0) === 0xC0
+                    ? null  // 0x00Cn scroll down (no-op)
+                    : throw new RuntimeException(sprintf('Unknown opcode: %s', $op)),
             },
             0x1 => $this->op1NNN($op),
             0x2 => $this->op2NNN($op),
