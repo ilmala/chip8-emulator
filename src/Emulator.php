@@ -16,14 +16,18 @@ use Chip8\Timer\SoundTimer;
 
 final class Emulator
 {
-    // CHIP-8 programs typically run at 500–700 Hz; 600 is a safe middle ground.
-    private const int CYCLES_PER_SECOND = 600;
+    // CHIP-8 programs typically run at 500–1000 Hz; 900 is a good balance.
+    private const int CYCLES_PER_SECOND = 900;
 
     // Timers decrement and the display is refreshed at 60 Hz.
     private const int TIMER_HZ = 60;
 
     // Number of CPU cycles between each timer tick and display refresh.
     private const int CYCLES_PER_TICK = self::CYCLES_PER_SECOND / self::TIMER_HZ;
+
+    // How many ticks a key stays "pressed" after the last character read from stdin.
+    // At 60 Hz, 6 ticks ≈ 100 ms — enough for slow game loops to poll it.
+    private const int KEY_HOLD_TICKS = 6;
 
 
     private readonly Memory $memory;
@@ -45,6 +49,9 @@ final class Emulator
     private readonly TerminalRenderer $renderer;
 
     private bool $stopped = false;
+
+    // Ticks remaining before auto-releasing the current key (0 = no key held).
+    private int $keyHoldTicks = 0;
 
     public function __construct()
     {
@@ -77,33 +84,35 @@ final class Emulator
     /**
      * Starts the main emulator loop.
      *
-     * Runs CPU steps at ~600 Hz. Every CYCLES_PER_TICK steps (~10), both timers
-     * are decremented and the display is re-rendered. Call stop() to exit the loop.
-     *
-     * Rate limiting uses usleep() to target the desired cycle rate without
-     * busy-waiting. Precision is sufficient for CHIP-8 (±1 ms drift is acceptable).
+     * Each iteration runs CYCLES_PER_TICK CPU steps back-to-back (no sleep between
+     * them), then ticks the timers, reads input, and renders the display. The loop
+     * sleeps for whatever time remains in the 1/TIMER_HZ window, keeping the tick
+     * rate close to 60 Hz regardless of render overhead.
      */
     public function run(): void
     {
         $this->setupTerminal();
         $this->renderer->clearScreen();
 
-        $cycleCount = 0;
-        $sleepUs = (int) (1_000_000 / self::CYCLES_PER_SECOND);
+        $tickNs = (int) (1_000_000_000 / self::TIMER_HZ);
 
         while ( ! $this->stopped) {
-            $this->cpu->step();
-            $cycleCount++;
+            $tickStart = hrtime(true);
 
-            if ($cycleCount >= self::CYCLES_PER_TICK) {
-                $this->readInput();
-                $this->delayTimer->tick();
-                $this->soundTimer->tick();
-                $this->renderer->render($this->display);
-                $cycleCount = 0;
+            for ($i = 0; $i < self::CYCLES_PER_TICK; $i++) {
+                $this->cpu->step();
             }
 
-            usleep($sleepUs);
+            $this->readInput();
+            $this->delayTimer->tick();
+            $this->soundTimer->tick();
+            $this->renderer->render($this->display);
+
+            $remainingNs = $tickNs - (hrtime(true) - $tickStart);
+
+            if ($remainingNs > 0) {
+                usleep((int) ($remainingNs / 1_000));
+            }
         }
     }
 
@@ -159,24 +168,41 @@ final class Emulator
 
     private function readInput(): void
     {
-        $this->keyboard->releaseAll();
+        // Drain the entire stdin buffer; keep the last mapped CHIP-8 key found.
+        $newKey = null;
 
-        $char = fread(STDIN, 1);
+        while (true) {
+            $char = fread(STDIN, 1);
 
-        if ($char === false || $char === '') {
-            return;
+            if ($char === false || $char === '') {
+                break;
+            }
+
+            if ($char === "\033") {
+                $this->stop();
+
+                return;
+            }
+
+            $key = self::charToChip8Key($char);
+
+            if ($key !== null) {
+                $newKey = $key;
+            }
         }
 
-        if ($char === "\033") {
-            $this->stop();
+        if ($newKey !== null) {
+            // New input: press the key and reset the hold window.
+            $this->keyboard->releaseAll();
+            $this->keyboard->press($newKey);
+            $this->keyHoldTicks = self::KEY_HOLD_TICKS;
+        } elseif ($this->keyHoldTicks > 0) {
+            // No new input: count down and auto-release when the window expires.
+            $this->keyHoldTicks--;
 
-            return;
-        }
-
-        $key = self::charToChip8Key($char);
-
-        if ($key !== null) {
-            $this->keyboard->press($key);
+            if ($this->keyHoldTicks === 0) {
+                $this->keyboard->releaseAll();
+            }
         }
     }
 }

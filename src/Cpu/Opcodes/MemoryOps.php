@@ -36,21 +36,23 @@ trait MemoryOps
         $this->memory->write(($i + 2) & 0xFFFF, ($vx % 10) & 0xFF);
     }
 
-    /** LD [I], Vx — Store V0 through Vx in memory starting at address I. */
+    /** LD [I], Vx — Store V0 through Vx in memory starting at address I. I = I + x + 1 (original CHIP-8). */
     private function opFX55(Opcode $op): void
     {
         $base = $this->registers->getI();
         for ($r = 0; $r <= $op->x; $r++) {
             $this->memory->write(($base + $r) & 0xFFFF, $this->registers->getV($r));
         }
+        $this->registers->setI(($base + $op->x + 1) & 0xFFFF);
     }
 
-    /** LD Vx, [I] — Read V0 through Vx from memory starting at address I. */
+    /** LD Vx, [I] — Read V0 through Vx from memory starting at address I. I = I + x + 1 (original CHIP-8). */
     private function opFX65(Opcode $op): void
     {
         $base = $this->registers->getI();
         for ($r = 0; $r <= $op->x; $r++) {
             $this->registers->setV($r, $this->memory->read(($base + $r) & 0xFFFF));
         }
+        $this->registers->setI(($base + $op->x + 1) & 0xFFFF);
     }
 }
